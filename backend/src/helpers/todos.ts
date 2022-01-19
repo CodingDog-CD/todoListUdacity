@@ -9,6 +9,7 @@ import * as createError from 'http-errors'
 
 // TODO: Implement businessLogic
 const todoAccess = new TodoAccess()
+const bucketName = process.env.ATTACHMENT_S3_BUCKET
 
 export async function createTodoItem(
     createTodoRequest: CreateTodoRequest,
@@ -24,6 +25,6 @@ export async function createTodoItem(
         name: createTodoRequest.name,
         dueDate: createTodoRequest.dueDate,
         done: false,
-        attachmentUrl?: string
+        attachmentUrl: `http://${bucketName}.s3.amazonaws.com/${todoId}`
     })
 }
