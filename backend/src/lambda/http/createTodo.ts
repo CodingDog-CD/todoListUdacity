@@ -14,7 +14,6 @@ export const handler = middy(
     const userId = getUserId(event)
     const newTodoItem = await createTodoItem(newTodo, userId)
 
-
     return {
       statusCode: 201,
       headers:{

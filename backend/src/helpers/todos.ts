@@ -1,6 +1,7 @@
 import { TodoAccess } from './todosAcess'
 import { AttachmentUtils } from './attachmentUtils';
 import { TodoItem } from '../models/TodoItem'
+import { TodoUpdate } from '../models/TodoUpdate'
 import { CreateTodoRequest } from '../requests/CreateTodoRequest'
 import { UpdateTodoRequest } from '../requests/UpdateTodoRequest'
 import { createLogger } from '../utils/logger'
@@ -20,7 +21,7 @@ export async function getTodosForUser(userId: string){
 export async function createTodoItem(
     createTodoRequest: CreateTodoRequest,
     userId: string
-): Promise<APIGatewayProxyResult> {
+): Promise<TodoItem> {
 
     const todoId = uuid.v4()
     const newItem = {
@@ -34,15 +35,26 @@ export async function createTodoItem(
     }
     await todoAccess.createTodo(newItem)
 
-    return {
-        statusCode: 201,
-        body: JSON.stringify({
-            items: newItem
-        })
-    }
+    return newItem
 
 }
 
 export async function createAttachmentPresignedUrl(todoId: string): Promise<string>{
     return AttachmentUtils(todoId)
+}
+
+export async function updateTodo(userId: string, todoId: string, updatedTodo: UpdateTodoRequest): Promise<TodoUpdate> {
+
+
+    const updatedItem = {
+        name: updatedTodo.name,
+        dueDate: updatedTodo.dueDate,
+        done: updatedTodo.done
+    }
+    const updatedTodoItem = await todoAccess.updateTodo(userId, todoId, updatedItem)
+    return updatedTodoItem
+}
+
+export async function deleteTodo(userId: string, todoId: string) {
+    await todoAccess.deleteTodo(userId,todoId)
 }
