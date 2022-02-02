@@ -49,14 +49,14 @@ export class Todos extends React.PureComponent<TodosProps, TodosState> {
       const dueDate = this.calculateDueDate()
       const newTodo = await createTodo(this.props.auth.getIdToken(), {
         name: this.state.newTodoName,
-        dueDate
+        dueDate: dueDate
       })
       this.setState({
         todos: [...this.state.todos, newTodo],
         newTodoName: ''
       })
-    } catch {
-      alert('Todo creation failed')
+    } catch (error){
+      alert(`Todo creation failed ${error}`)
     }
   }
 
@@ -97,7 +97,7 @@ export class Todos extends React.PureComponent<TodosProps, TodosState> {
         loadingTodos: false
       })
     } catch (e) {
-      alert(`Failed to fetch todos: ${e.message}`)
+      alert(`Failed to fetch todos: ${e}`)
     }
   }
 

@@ -4,7 +4,6 @@ import { DocumentClient } from 'aws-sdk/clients/dynamodb'
 import { createLogger } from '../utils/logger'
 import { TodoItem } from '../models/TodoItem'
 import { TodoUpdate } from '../models/TodoUpdate';
-import { APIGatewayProxyEvent } from 'aws-lambda'
 
 const XAWS = AWSXRay.captureAWS(AWS)
 
@@ -21,7 +20,7 @@ export class TodoAccess {
         }
         
         async getTodos(userId: string): Promise<TodoItem[]> {
-            console.log(`Get todo list for the user with the ID: ${userId}`)
+            logger.info(`Get todo list for the user with the ID: ${userId}`)
 
             const result = await this.docClient.query({
                 TableName: this.todoTableName,
@@ -31,13 +30,16 @@ export class TodoAccess {
                   ':userId': userId
                 }
             }).promise()
-
+            logger.info(`there are ${result.Count} items detected`)
             const todoItems = result.Items
             return todoItems as TodoItem[]
+
+
+            
         }
 
         async createTodo(todoItem: TodoItem): Promise<TodoItem>{
-            console.log(`Creating a new todo item with id ${todoItem.todoId}`)
+            logger.info(`Creating a new todo item with id ${todoItem.todoId}`)
             
             await this.docClient.put({
                 TableName: this.todoTable,
@@ -53,7 +55,12 @@ export class TodoAccess {
                     "userId": userId,
                     "todoId": todoId
                 },
-                UpdateExpression: "set name = :n, dueDate = :dD, done = :d",
+                UpdateExpression: "set #na = :n, #ndD = :dD, #doe = :d",
+                ExpressionAttributeNames:{
+                    '#na' : 'name',
+                    '#ndD': 'dueDate',
+                    '#doe': 'done'
+                },
                 ExpressionAttributeValues:{
                     ":n" : updatedItem.name,
                     ":dD" : updatedItem.dueDate,
@@ -63,9 +70,9 @@ export class TodoAccess {
             }
             const updatedTodoItem = await this.docClient.update(params, function(err, data){
                 if (err) {
-                    console.error("Unable to update item. Error JSON:", JSON.stringify(err, null, 2))
+                    logger.error("Unable to update item. Error JSON:", JSON.stringify(err, null, 2))
                 } else {
-                    console.log("UpdateItem succeeded:", JSON.stringify(data, null, 2))
+                    logger.info("UpdateItem succeeded:", JSON.stringify(data, null, 2))
                 }
             }).promise()
             return updatedTodoItem.Attributes as TodoUpdate
@@ -81,9 +88,9 @@ export class TodoAccess {
             }
             await this.docClient.delete(params, function(err,data){
                 if (err) {
-                    console.error("Unable to delete item. Error JSON: ", JSON.stringify(err,null,2))
+                    logger.error("Unable to delete item. Error JSON: ", JSON.stringify(err,null,2))
                 } else {
-                    console.log("DeleteItem succeeded: ", JSON.stringify(data, null, 2))
+                    logger.info("DeleteItem succeeded: ", JSON.stringify(data, null, 2))
                 }
             }).promise()
         }
@@ -93,12 +100,12 @@ export class TodoAccess {
 
 function createDynamoDBClient() {
     if (process.env.IS_OFFLINE) {
-        console.log('Creating a local DynamoDB instance')
-        return new AWS.DynamoDB.DocumentClient({
+        logger.info('Creating a local DynamoDB instance')
+        return new XAWS.DynamoDB.DocumentClient({
             region: 'localhost',
             endpoint: 'http://localhost:8000'
         })
     }
 
-    return new AWS.DynamoDB.DocumentClient()
+    return new XAWS.DynamoDB.DocumentClient()
 }

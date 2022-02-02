@@ -3,7 +3,7 @@ import 'source-map-support/register'
 
 import { verify, decode } from 'jsonwebtoken'
 import { createLogger } from '../../utils/logger'
-import Axios from 'axios'
+// import Axios from 'axios'
 import { Jwt } from '../../auth/Jwt'
 import { JwtPayload } from '../../auth/JwtPayload'
 
@@ -61,20 +61,47 @@ async function verifyToken(authHeader: string): Promise<JwtPayload> {
   // TODO: Implement token verification
   // You should implement it similarly to how it was implemented for the exercise for the lesson 5
   // You can read more about how to do this here: https://auth0.com/blog/navigating-rs256-and-jwks/
+
   const kidPropJwt = jwt.header.kid
-  const jwksClient = require('jwks-client')
+  const jwksClient = require('jwks-rsa')
+  
   const jwksClientObject = jwksClient({
     strictSsl: true,
     jwksUri: jwksUrl
   })
+  
+  console.log(token)
+  console.log(jwt)
+  console.log(jwksClientObject)
+  console.log(`kid value: ${kidPropJwt}`)
+  console.log("Getting signingKey")
+  /*
   const signingKey = jwksClientObject.getSigningKey(kidPropJwt, (err, key)=>{
     if (err) {
       console.log('failed to get signing key')
     }
-    return key.publicKey;
+    //key.publicKey || key.rsaPublicKey
+    if (!key) {
+      console.log('key doesn\'t exist!!!')
+    }
+    console.log(key)
+    const keyResult = key.publicKey || key.rsaPublicKey
+    return keyResult
   })
-  return verify(token, signingKey, {algorithms: ['RS256']}) as JwtPayload
+  console.log("verifying key pair")
+  console.log(token)
+  console.log(signingKey)
+  */
+  const key = await jwksClientObject.getSigningKey(kidPropJwt)
+  const signingKey = key.getPublicKey()
+  console.log(signingKey)
+  const verifiedToken = verify(token, signingKey, {algorithms: ['RS256']}) as JwtPayload
+  console.log(verifiedToken)
+
+  return verifiedToken
 }
+
+
 
 function getToken(authHeader: string): string {
   if (!authHeader) throw new Error('No authentication header')
